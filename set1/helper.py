@@ -69,9 +69,11 @@ letterFrequency = {
 
 def englishTextScore(text):
     text = text.lower()
-    letters = Counter(text.lower())
-    usedLetters = set(letters.keys())
     allLetters = set(letterFrequency.keys())
+
+    letters = dict.fromkeys(allLetters, 0)
+    letters.update(Counter(text.lower()))
+    usedLetters = set(letters.keys())
     to_compare = sorted(usedLetters & allLetters)
 
     vAvgFreq = [letterFrequency[x]*100 for x in to_compare]
@@ -82,7 +84,7 @@ def englishTextScore(text):
 
     cos_distance = (1 - spatial.distance.cosine(vAvgFreq, vUsedFreq))
     lengthFactor = len(to_compare)
-    return cos_distance*lengthFactor
+    return cos_distance
 
 
     """
@@ -112,8 +114,10 @@ def findSingleByteXorChar(text):
     for i in range(1,255 + 1):
         _output = xor_char(text, chr(i))
         _score = englishTextScore(_output.decode('hex'))
-        printable = all(c in string.printable for c in _output.decode('hex'))
+        #printable = all(c in string.printable for c in _output.decode('hex'))
+        printable = True
         if _score > score and printable:
+
             score = _score
             output = _output
             char = chr(i)
