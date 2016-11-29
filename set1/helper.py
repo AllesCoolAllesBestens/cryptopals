@@ -79,7 +79,8 @@ def englishTextScore(text):
     vAvgFreq = [letterFrequency[x]*100 for x in to_compare]
     vUsedFreq = [letters[x] for x in to_compare]
     assert len(vUsedFreq) == len(vAvgFreq)
-    if len(vUsedFreq) == 0:
+    assert len(vUsedFreq) > 0 and len(vAvgFreq) > 0
+    if sum(vUsedFreq) == 0:
         return 0
 
     cos_distance = (1 - spatial.distance.cosine(vAvgFreq, vUsedFreq))
@@ -114,6 +115,9 @@ def findSingleByteXorChar(text):
     for i in range(1,255 + 1):
         _output = xor_char(text, chr(i))
         _score = englishTextScore(_output.decode('hex'))
+        """
+        Might be working without the check for printables now
+        """
         #printable = all(c in string.printable for c in _output.decode('hex'))
         printable = True
         if _score > score and printable:
