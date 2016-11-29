@@ -1,6 +1,7 @@
 from collections import Counter
 import math
 from scipy import spatial
+import string
 
 def xor_string(s1, s2):
     assert len(s1) == len(s2)
@@ -16,6 +17,16 @@ def xor_char(s1, c1):
         output += chr(ord(c1) ^ ord(c))
 
     return output.encode('hex')
+
+def encryptRepeatingKey(text, key):
+    output = ""
+    for i in range(len(text)):
+        output += chr(ord(text[i]) ^ ord(key[i % len(key)]))
+
+    return output
+
+
+
 """
 letterFrequency = {
         'a':8.167, 'b':1.492, 'c':2.782, 'd':4.253,
@@ -57,9 +68,6 @@ letterFrequency = {
 }
 
 def englishTextScore(text):
-
-
-
     text = text.lower()
     letters = Counter(text.lower())
     usedLetters = set(letters.keys())
@@ -72,7 +80,9 @@ def englishTextScore(text):
     if len(vUsedFreq) == 0:
         return 0
 
-    return (1 - spatial.distance.cosine(vAvgFreq, vUsedFreq))*len(to_compare)
+    cos_distance = (1 - spatial.distance.cosine(vAvgFreq, vUsedFreq))
+    lengthFactor = len(to_compare)
+    return cos_distance*lengthFactor
 
 
     """
@@ -102,7 +112,8 @@ def findSingleByteXorChar(text):
     for i in range(1,255 + 1):
         _output = xor_char(text, chr(i))
         _score = englishTextScore(_output.decode('hex'))
-        if _score > score:
+        printable = all(c in string.printable for c in _output.decode('hex'))
+        if _score > score and printable:
             score = _score
             output = _output
             char = chr(i)
