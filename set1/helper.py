@@ -1,5 +1,6 @@
 from collections import Counter
 import math
+from scipy import spatial
 
 def xor_string(s1, s2):
     assert len(s1) == len(s2)
@@ -68,7 +69,16 @@ def englishTextScore(text):
     vAvgFreq = [letterFrequency[x]*100 for x in to_compare]
     vUsedFreq = [letters[x] for x in to_compare]
     assert len(vUsedFreq) == len(vAvgFreq)
+    if len(vUsedFreq) == 0:
+        return 0
 
+    return (1 - spatial.distance.cosine(vAvgFreq, vUsedFreq))*len(to_compare)
+
+
+    """
+
+    # This is old code implementing the cosine distance.
+    # Left this for comprehension
     dot = 0
     magA = 0
     magB = 0
@@ -80,8 +90,10 @@ def englishTextScore(text):
 
     if magA == 0 or magB == 0:
         return 0
+
     similarity = dot/(math.sqrt(magA)*math.sqrt(magB))
-    return similarity*len(to_compare)
+
+    """
 
 def findSingleByteXorChar(text):
     score = -1
