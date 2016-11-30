@@ -2,6 +2,7 @@ from collections import Counter
 import math
 from scipy import spatial
 import string
+import itertools
 
 def xor_string(s1, s2):
     assert len(s1) == len(s2)
@@ -18,7 +19,45 @@ def xor_char(s1, c1):
 
     return output.encode('hex')
 
-def encryptRepeatingKey(text, key):
+def transponseCipher(cipher, keysize):
+    blocks = [''] * keysize
+    for i in range(len(cipher)):
+        blocks[i%keysize] += cipher[i]
+
+    return blocks
+
+
+def hammingDistance(s1, s2):
+    xored = xor_string(s1.encode('hex'),s2.encode('hex'))
+    return sum([bin(ord(x)).count("1") for x in xored.decode('hex')])
+
+def avgHammingDistance(*words):
+    assert len(words) > 1                   # at least 2 words
+    assert len(words) % 2 == 0              # word count shoult be a
+                                            # multiple of 2
+    n = len(words[0])
+    assert n > 0                            # length of word > 0
+    assert all(len(x) == n for x in words)  # all words are of the same length
+    sumDistance = 0
+
+
+    distances = map(lambda (x,y): hammingDistance(x,y),
+            list(itertools.combinations(words,2)))
+    return float(sum(distances))/float(len(distances))
+
+def findKeysize(cipher, nBlocks=2, maxKeysize=40):
+    keysize = []
+    for i in range(2, maxKeysize+1):
+        words = []
+        for n in range(nBlocks):
+            words.append(cipher[n*i:(n*i)+i])
+        keysize.append((i,avgHammingDistance(*words)/i))
+
+    return sorted(keysize, key=lambda tup: tup[1])[0]
+
+
+
+def xorWithRepeatingKey(text, key):
     output = ""
     for i in range(len(text)):
         output += chr(ord(text[i]) ^ ord(key[i % len(key)]))
@@ -69,6 +108,7 @@ letterFrequency = {
 
 def englishTextScore(text):
     text = text.lower()
+    textlen = len(text)
     allLetters = set(letterFrequency.keys())
 
     letters = dict.fromkeys(allLetters, 0)
@@ -76,7 +116,8 @@ def englishTextScore(text):
     usedLetters = set(letters.keys())
     to_compare = sorted(usedLetters & allLetters)
 
-    vAvgFreq = [letterFrequency[x]*100 for x in to_compare]
+    vAvgFreq = [(float(letterFrequency[x])/float(textlen))*100
+                    for x in to_compare]
     vUsedFreq = [letters[x] for x in to_compare]
     assert len(vUsedFreq) == len(vAvgFreq)
     assert len(vUsedFreq) > 0 and len(vAvgFreq) > 0
