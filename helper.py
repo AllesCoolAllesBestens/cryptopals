@@ -3,6 +3,15 @@ import math
 from scipy import spatial
 import string
 import itertools
+from Crypto.Cipher import AES
+
+"""
+http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
+"""
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in xrange(0, len(l), n):
+        yield l[i:i + n]
 
 def xor_string(s1, s2):
     assert len(s1) == len(s2)
@@ -21,6 +30,57 @@ def checkForECBEncryption(ciphertext, blocksize):
         blocks.append(block)
 
     return False
+
+def decryptAES(ciphertext, key):
+    cipher = AES.new(key, AES.MODE_ECB)
+    return cipher.decrypt(ciphertext)
+
+def encryptAES(plaintext, key):
+    cipher = AES.new(key, AES.MODE_ECB)
+    return cipher.encrypt(plaintext)
+
+def encryptAES_CBC(plaintext, key, IV):
+    padPKCS7(plaintext, 16)
+    blocks = [plaintext[i:i+16] for i in range(0, len(plaintext), 16)]
+    ciphertext = [None] * len(blocks)
+    for i in range(len(blocks)):
+        plain_in = blocks[i]
+
+        if i == 0:
+            plain_in = xor_string(IV.encode('hex'), plain_in.encode('hex'))
+        else:
+            plain_in = xor_string(ciphertext[i-1].encode('hex'),
+                                plain_in.encode('hex'))
+
+        ciphertext[i] = encryptAES(plain_in.decode('hex'),key)
+    return "".join(ciphertext)
+
+def decryptAES_CBC(ciphertext, key, IV):
+    blocks = [ciphertext[i:i+16] for i in range(0, len(ciphertext), 16)]
+    plaintext = [None] * len(blocks)
+
+    for i in range(len(blocks)):
+        decrypted = decryptAES(blocks[i],key)
+        if i == 0:
+            decrypted = xor_string(IV.encode('hex'), decrypted.encode('hex'))
+        else:
+            decrypted = xor_string(blocks[i-1].encode('hex'), decrypted.encode('hex'))
+
+        plaintext[i] = decrypted.decode('hex')
+
+    return "".join(plaintext)
+
+
+"""
+
+As described in https://tools.ietf.org/html/rfc2315 Section 10.3
+"""
+def padPKCS7(key, blocksize):
+    l = len(key)
+    k = blocksize
+    padsize = k - (l % k)
+    return key.ljust(len(key)+padsize, chr(padsize))
+
 
 def xor_char(s1, c1):
     output = ""
