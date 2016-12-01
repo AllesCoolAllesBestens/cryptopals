@@ -4,6 +4,7 @@ from scipy import spatial
 import string
 import itertools
 from Crypto.Cipher import AES
+import random
 
 """
 http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
@@ -12,6 +13,26 @@ def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in xrange(0, len(l), n):
         yield l[i:i + n]
+
+def getRandomKey(size=16):
+    key = ""
+    for i in range(size):
+        key += chr(random.randint(0, 127))
+    return "".join(key)
+
+def encryption_oracle(plaintext):
+    key = getRandomKey()
+    plaintext = "A"*random.randint(5,10)+plaintext+"A"*random.randint(5,10)
+
+    if random.random() > 0.5:
+        return encryptAES(plaintext, key)
+    else:
+        IV = getRandomKey(16)
+        return encryptAES_CBC(plaintext,key,IV)
+
+
+
+
 
 def xor_string(s1, s2):
     assert len(s1) == len(s2)
@@ -37,15 +58,15 @@ def decryptAES(ciphertext, key):
 
 def encryptAES(plaintext, key):
     cipher = AES.new(key, AES.MODE_ECB)
+    plaintext = padPKCS7(plaintext, 16)
     return cipher.encrypt(plaintext)
 
 def encryptAES_CBC(plaintext, key, IV):
-    padPKCS7(plaintext, 16)
+    plaintext = padPKCS7(plaintext, 16)
     blocks = [plaintext[i:i+16] for i in range(0, len(plaintext), 16)]
     ciphertext = [None] * len(blocks)
     for i in range(len(blocks)):
         plain_in = blocks[i]
-
         if i == 0:
             plain_in = xor_string(IV.encode('hex'), plain_in.encode('hex'))
         else:
@@ -78,6 +99,8 @@ As described in https://tools.ietf.org/html/rfc2315 Section 10.3
 def padPKCS7(key, blocksize):
     l = len(key)
     k = blocksize
+    if l % k == 0:
+        return key
     padsize = k - (l % k)
     return key.ljust(len(key)+padsize, chr(padsize))
 
